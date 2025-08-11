@@ -81,8 +81,34 @@ pip install -U pip
 pip install -r requirements.txt
 ```
 
+### Configuração via .env (passo a passo)
+- O projeto lê variáveis de ambiente (CLI tem prioridade). Para praticidade, crie um arquivo `.env` na raiz do repositório.
+
+1) Crie o arquivo `.env` na raiz do projeto:
+
+2) Cole este conteúdo base e ajuste conforme necessário:
+```dotenv
+_AIRFLOW_WWW_USER_USERNAME=
+_AIRFLOW_WWW_USER_PASSWORD=
+AIRFLOW_ADMIN_FIRSTNAME=
+AIRFLOW_ADMIN_LASTNAME=
+AIRFLOW_ADMIN_EMAIL=
+```
+3) Como o `.env` é usado:
+- Execução local do pipeline: o Makefile carrega automaticamente as credenciais do Airflow e cria o usuário.
+- Airflow local (sem Docker): Execute esses comandos para iniciar o Airflow corretamente:
+  ```bash
+  make init-db & \
+  make create-user & \
+  make upgrade-db & \
+  airflow webserver -p 8080 &
+  airflow scheduler &
+
+  ```
+- Docker Compose: o Compose lê `.env` automaticamente e substitui as variáveis no `docker-compose.yml`.
+
 ### Execução local (sem Airflow)
-1) Defina o IP local do Spark para evitar erros de bind/host:
+1) Defina o IP local do Spark:
 ```bash
 export SPARK_LOCAL_IP=127.0.0.1
 ```
@@ -111,39 +137,22 @@ pip install 'apache-airflow==2.9.3' --constraint \
 ```
 2) Inicializar e criar usuário admin:
 ```bash
-airflow db init
-airflow users create \
-  --username admin --password admin \
-  --firstname Admin --lastname User \
-  --role Admin --email admin@example.com
+make init-db & \
+make create-user & \
+make upgrade-db
 ```
-3) Iniciar serviços:
+3) Iniciar serviços e disparar DAG:
 ```bash
 airflow webserver -p 8080 &
 airflow scheduler &
+airflow dags trigger breweries_medallion_pipeline
 ```
-4) Executar DAG:
-- UI: `http://localhost:8080` → `breweries_medallion_pipeline`
-- CLI: `airflow dags trigger breweries_medallion_pipeline`
-
-Variáveis úteis (opcional):
-- `ENDPOINT`, `PER_PAGE`, `MAX_PAGES`, `PAGE_PARAM`, `PER_PAGE_PARAM`
-- `DATA_DIR` (default: `${AIRFLOW_HOME}/data`), `BRONZE_OUTPUT_PATH`, `SILVER_OUTPUT_PATH`, `GOLD_OUTPUT_PATH`
-- `DAG_CRON` (cron do DAG)
 
 ### Execução via Docker (Airflow + PySpark)
 1) Subir ambiente:
 ```bash
 docker compose up --build -d
 # UI: http://localhost:8080
-```
-2) Permissões dos volumes (se usar bind mounts):
-```bash
-sudo mkdir -p data logs
-sudo chown -R 50000:0 data logs
-sudo chmod -R 775 data logs
-docker compose down
-docker compose up -d --build
 ```
 
 ### Esquema de dados
@@ -160,6 +169,7 @@ docker compose up -d --build
 - Extração: `ENDPOINT`, `PER_PAGE`, `MAX_PAGES`, `PAGE_PARAM`, `PER_PAGE_PARAM`, `REQUEST_TIMEOUT_SECONDS`
 - Saída: `BRONZE_OUTPUT_PATH`, `SILVER_OUTPUT_PATH`, `GOLD_OUTPUT_PATH`, `DATA_DIR`
 - Airflow: `DAG_CRON`, `AIRFLOW_HOME`
+- Spark: `SPARK_LOCAL_IP`
 
 ### Troubleshooting
 - PySpark + Python 3.12/3.13: use Python 3.11 (PySpark 3.5.1 não suporta 3.12/3.13).
