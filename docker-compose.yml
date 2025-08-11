@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  airflow:
+    build: .
+    container_name: breweries_airflow
+    ports:
+      - "8080:8080"
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__LOGGING__BASE_LOG_FOLDER=/opt/airflow/logs
+      - ENDPOINT=${ENDPOINT:-https://api.openbrewerydb.org/v1/breweries}
+      - PER_PAGE=${PER_PAGE:-50}
+      - MAX_PAGES=${MAX_PAGES:-5}
+      - PAGE_PARAM=${PAGE_PARAM:-page}
+      - PER_PAGE_PARAM=${PER_PAGE_PARAM:-per_page}
+      - BRONZE_OUTPUT_PATH=${BRONZE_OUTPUT_PATH:-/opt/airflow/data/datalake/bronze/openbrewerydb}
+      - SILVER_OUTPUT_PATH=${SILVER_OUTPUT_PATH:-/opt/airflow/data/datalake/silver/openbrewerydb}
+      - GOLD_OUTPUT_PATH=${GOLD_OUTPUT_PATH:-/opt/airflow/data/datalake/gold/openbrewerydb_aggregated}
+      - DAG_CRON=${DAG_CRON:-0 0 * * *}
+      - SPARK_LOCAL_IP=127.0.0.1
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags:ro
+      - ./src:/opt/airflow/src:ro
+      - airflow_data:/opt/airflow/data
+      - airflow_logs:/opt/airflow/logs
+    restart: unless-stopped 
+
+volumes:
+      airflow_logs:
+      airflow_data:
