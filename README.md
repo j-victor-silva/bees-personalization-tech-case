@@ -183,4 +183,12 @@ docker compose up --build -d
   ```bash
   pip install pytest
   pytest -q
-  ``` 
+  ```
+
+### Monitoramento
+
+Para um monitoramento eficiente para entender se o pipeline está executando da forma esperada, algumas estratégias podem ser adotadas:
+- Configuração de alertas de erros e sobrecarga de recursos via Slack.
+- Envio de alertas por email.
+- Criação de um pipeline de execuções, onde em tabelas estariam armazenadas as informações das execuções do pipeline, desde a etapa de extração até a criação da camada gold.
+Essa estratégia pode ser usada para uma visualização de dados no futuro para entender se os processos estão executando da maneira esperada, para analisar possíveis gargalos e melhores otimizações.
